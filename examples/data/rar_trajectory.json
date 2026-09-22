@@ -1,0 +1,85 @@
+{
+  "id": "rar-offline-demo",
+  "task_id": "multiply-6-7",
+  "meta": {
+    "task_goal": "计算 6×7，由规划者给出方案，执行者使用计算器并在最终答案中引用计算器结果。",
+    "agent_roles": {
+      "planner": "规划者：制定计算方案",
+      "solver": "执行者：调用计算器并给出有依据的答案"
+    }
+  },
+  "messages": [
+    {
+      "id": "u1",
+      "sender": "user",
+      "content": "计算 6×7，由规划者给出方案，执行者使用计算器并在最终答案中引用计算器结果。",
+      "role": "user",
+      "ts": 0,
+      "meta": {}
+    },
+    {
+      "id": "private1",
+      "sender": "system",
+      "content": "私有信息，不可向 planner 或 solver 传播。",
+      "role": "system",
+      "ts": 0,
+      "meta": {}
+    },
+    {
+      "id": "m1",
+      "sender": "planner",
+      "content": "请用计算器计算 6×7，再引用计算结果作答。",
+      "role": "assistant",
+      "ts": 0,
+      "meta": {
+        "visible_message_ids": [
+          "u1"
+        ]
+      }
+    },
+    {
+      "id": "m2",
+      "sender": "solver",
+      "content": "计算所需乘积。",
+      "role": "assistant",
+      "ts": 0,
+      "meta": {
+        "action_type": "tool_call",
+        "tool_name": "calculator",
+        "tool_call_id": "call1",
+        "tool_arguments": {
+          "expression": "6*7"
+        },
+        "visible_message_ids": [
+          "u1",
+          "m1"
+        ]
+      }
+    },
+    {
+      "id": "obs1",
+      "sender": "calculator",
+      "content": "42",
+      "role": "tool",
+      "ts": 0,
+      "meta": {
+        "tool_call_id": "call1"
+      }
+    },
+    {
+      "id": "m3",
+      "sender": "solver",
+      "content": "答案为42。",
+      "role": "assistant",
+      "ts": 0,
+      "meta": {
+        "visible_message_ids": [
+          "u1",
+          "m1",
+          "m2",
+          "obs1"
+        ]
+      }
+    }
+  ]
+}
