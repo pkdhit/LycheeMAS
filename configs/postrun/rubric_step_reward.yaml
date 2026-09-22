@@ -1,0 +1,29 @@
+# attributor/rubric_step_reward + credit_assigner/step_reward
+# 复现目标：自动生成步骤级 rubrics，并把每次智能体发言/工具调用评分为归一化奖励。
+
+method: rubric_step_reward
+credit_assigner: step_reward
+
+# 任务目标可在这里写死，也可运行时通过 trajectory.meta["task_goal"] / ["question"] 传入。
+task_goal: null
+
+# rubric_llm / judge_llm 是 Python 回调，真实实验由脚本注入，不写入 YAML。
+# rubric_llm: null
+# judge_llm: null
+
+# 无 judge_llm 时是否启用离线启发式评审。默认 false，避免静默兜底造成假阳性。
+heuristic_judge: false
+
+# 若不注入 rubric_llm，则使用内置通用四类细则：子任务完成、已有信息使用、依据/工具、角色/格式。
+max_rubrics: 6
+include_tool_steps: true
+max_history_chars: 4000
+max_output_chars: 3000
+min_content_chars: 1
+
+# 单步奖励低于该阈值时，对应 Attribution.is_fault=True。
+reward_threshold: 0.5
+
+# credit_assigner/step_reward：按 agent 聚合步骤奖励。
+aggregation: mean        # mean | sum
+use_external_reward: false

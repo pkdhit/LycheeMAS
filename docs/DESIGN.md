@@ -98,7 +98,7 @@ sg.add_node(name, node_fn, metadata={"agent_spec": spec})   # spec: core.types.A
 
 回答「一条轨迹里谁该为成败负责、如何用信号改进系统」。三入口：
 
-- **读侧** `analyze_run(trajectory, score, method, ...)`：attributor（`all_at_once/step_by_step/binary_search` 桩）→ credit_assigner（`attribution_guided` 桩）→ 写回 `trajectory.meta` 与 `TraceStore`。
+- **读侧** `analyze_run(trajectory, score, method, ...)`：attributor（`rubric_step_reward` 可跑；`all_at_once/step_by_step/binary_search` 桩）→ credit_assigner（`step_reward` 可跑；`attribution_guided` 桩）→ 写回 `trajectory.meta` 与 `TraceStore`。`rubric_step_reward` 将每条智能体发言/工具调用视为一步，自动生成或加载该步 rubrics，由评审模型逐条判定满足/不满足并按权重归一化为步骤奖励。
 - **图闭环** `optimize_postrun(sg, trajectories, method, ...)`：与 prerun 对称的批量离线运行后优化——图 + 轨迹批 → 优化 → 图（`post_run_optimizer` 类别；`attribution`/`train` 桩占名）。
 - **写侧** `train_from_runs(method, ...)`：离线消费轨迹与信用产训练产物（`trainer` 类别占名待接 RL 线）；产物经 prerun apply 挂载。
 
@@ -127,8 +127,8 @@ sg.add_node(name, node_fn, metadata={"agent_spec": spec})   # spec: core.types.A
 | memory | `memory_router` | `static`, `fixed` | `learned`, `soft_gate` |
 | processing | `processor` | `serial`, `parallel` | — |
 | processing | `aggregator` | `self_consistency`, `aggagent`（AggAgent agentic 聚合，COLM 2026） | `dynamicagg` |
-| postrun | `attributor` | — | `all_at_once`, `step_by_step`, `binary_search` |
-| postrun | `credit_assigner` | — | `attribution_guided` |
+| postrun | `attributor` | `rubric_step_reward` | `all_at_once`, `step_by_step`, `binary_search` |
+| postrun | `credit_assigner` | `step_reward` | `attribution_guided` |
 | postrun | `trainer` | — | —（RL 线待接） |
 | postrun | `post_run_optimizer` | — | `attribution`, `train`（图闭环桩） |
 | — | `benchmark` | 20 个（§5） | — |

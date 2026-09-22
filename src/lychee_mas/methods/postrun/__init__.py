@@ -2,7 +2,8 @@
 
 「读」执行轨迹的一侧：
   attributor/{all_at_once, step_by_step, binary_search}   错误归因（Who&When / MAST 对标）
-  credit_assigner/attribution_guided                       归因引导信用分配（核心贡献）
+  attributor/rubric_step_reward                            步骤级 rubric 生成 + 奖励计算
+  credit_assigner/{attribution_guided, step_reward}         归因/步骤奖励信用分配
   TraceStore                      轨迹/决策落点（消息级 + JSONL，见 store.py）
 
 训练（trainer）拆到姊妹包 `lychee_mas.train`。注册占位实现（`<name>: not wired yet (TODO)`），
@@ -14,11 +15,18 @@ from typing import Any
 
 from ...core.registry import REGISTRY
 from ...core.types import Trajectory
-from . import optimizers  # noqa: F401  触发 post_run_optimizer/{attribution,train} 桩注册
+from . import optimizers, rubric_step_reward  # noqa: F401  触发 postrun 组件注册
 from .base import (
     Attribution,
     CreditAssigner,
     FailureAttributor,
+)
+from .rubric_step_reward import (  # noqa: E402
+    RubricJudgement,
+    RubricStepRewardAttributor,
+    StepRewardCreditAssigner,
+    StepRewardRecord,
+    StepRubric,
 )
 from .store import TraceStore
 
@@ -70,4 +78,9 @@ __all__ = [
     "StepByStepAttributor",
     "BinarySearchAttributor",
     "AttributionGuidedCredit",
+    "RubricStepRewardAttributor",
+    "StepRewardCreditAssigner",
+    "StepRubric",
+    "RubricJudgement",
+    "StepRewardRecord",
 ]
