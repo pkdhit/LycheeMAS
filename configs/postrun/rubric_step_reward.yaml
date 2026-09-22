@@ -1,29 +1,14 @@
-# attributor/rubric_step_reward + credit_assigner/step_reward
-# 复现目标：自动生成步骤级 rubrics，并把每次智能体发言/工具调用评分为归一化奖励。
-
+# RaR -> MAS 步骤级奖励；不训练，不以局部奖励冒充因果贡献。
 method: rubric_step_reward
 credit_assigner: step_reward
-
-# 任务目标可在这里写死，也可运行时通过 trajectory.meta["task_goal"] / ["question"] 传入。
-task_goal: null
-
-# rubric_llm / judge_llm 是 Python 回调，真实实验由脚本注入，不写入 YAML。
-# rubric_llm: null
-# judge_llm: null
-
-# 无 judge_llm 时是否启用离线启发式评审。默认 false，避免静默兜底造成假阳性。
-heuristic_judge: false
-
-# 若不注入 rubric_llm，则使用内置通用四类细则：子任务完成、已有信息使用、依据/工具、角色/格式。
-max_rubrics: 6
+task_goal: null                 # null 时必须由 trajectory.meta 提供真实目标
+history_mode: explicit          # 每步 meta.visible_message_ids；全广播才用 all_previous
 include_tool_steps: true
-max_history_chars: 4000
-max_output_chars: 3000
-min_content_chars: 1
-
-# 单步奖励低于该阈值时，对应 Attribution.is_fault=True。
+max_rubrics: 6
+max_history_chars: 0            # 0=不限制；正数=超过即报错，不截断
+max_output_chars: 0
 reward_threshold: 0.5
-
-# credit_assigner/step_reward：按 agent 聚合步骤奖励。
-aggregation: mean        # mean | sum
-use_external_reward: false
+aggregation: mean              # mean | sum；经 Attribution.meta 传递，公共接口不变
+# rubric_llm/judge_llm 由调用者显式注入；不提供则报错。
+# 不再支持 heuristic_judge、min_content_chars、use_external_reward。
+# scripts/run_rar_step_reward.py 仅注入明确标记的 offline_replay 回调。

@@ -1,0 +1,188 @@
+{
+  "mode": "offline_replay",
+  "note": "手写流程验证样例；不是实际模型输出或人工标注。",
+  "steps": {
+    "m1": {
+      "context": {
+        "task_goal": "计算 6×7，由规划者给出方案，执行者使用计算器并在最终答案中引用计算器结果。",
+        "step": 1,
+        "message_id": "m1",
+        "agent": "planner",
+        "role": "规划者：制定计算方案",
+        "action_type": "utterance",
+        "history": [
+          {
+            "message_id": "u1",
+            "agent": "user",
+            "role": "user",
+            "action_type": "context",
+            "content": "计算 6×7，由规划者给出方案，执行者使用计算器并在最终答案中引用计算器结果。"
+          }
+        ]
+      },
+      "output": "请用计算器计算 6×7，再引用计算结果作答。",
+      "rubric_response": {
+        "rubrics": [
+          {
+            "id": "plan",
+            "description": "提出使用计算器计算 6×7 的可执行方案。",
+            "weight": 0.6,
+            "rationale": "规划者应给出下一步动作。"
+          },
+          {
+            "id": "handoff",
+            "description": "要求执行者引用计算结果再作答。",
+            "weight": 0.4,
+            "rationale": "目标要求最终答案有工具依据。"
+          }
+        ]
+      },
+      "judge_response": {
+        "judgements": [
+          {
+            "criterion_id": "handoff",
+            "satisfied": true,
+            "reason": "明确要求引用计算结果。"
+          },
+          {
+            "criterion_id": "plan",
+            "satisfied": true,
+            "reason": "明确要求计算器计算 6×7。"
+          }
+        ]
+      }
+    },
+    "m2": {
+      "context": {
+        "task_goal": "计算 6×7，由规划者给出方案，执行者使用计算器并在最终答案中引用计算器结果。",
+        "step": 2,
+        "message_id": "m2",
+        "agent": "solver",
+        "role": "执行者：调用计算器并给出有依据的答案",
+        "action_type": "tool_call",
+        "history": [
+          {
+            "message_id": "u1",
+            "agent": "user",
+            "role": "user",
+            "action_type": "context",
+            "content": "计算 6×7，由规划者给出方案，执行者使用计算器并在最终答案中引用计算器结果。"
+          },
+          {
+            "message_id": "m1",
+            "agent": "planner",
+            "role": "规划者：制定计算方案",
+            "action_type": "utterance",
+            "content": "请用计算器计算 6×7，再引用计算结果作答。"
+          }
+        ]
+      },
+      "output": "{\"content\": \"计算所需乘积。\", \"tool_arguments\": {\"expression\": \"6*7\"}, \"tool_name\": \"calculator\"}",
+      "rubric_response": {
+        "rubrics": [
+          {
+            "id": "tool",
+            "description": "选择 calculator 工具进行乘法计算。",
+            "weight": 0.6,
+            "rationale": "与规划中的计算方案一致。"
+          },
+          {
+            "id": "args",
+            "description": "工具参数 expression 为 6*7。",
+            "weight": 0.4,
+            "rationale": "参数应准确表达任务中的乘法。"
+          }
+        ]
+      },
+      "judge_response": {
+        "judgements": [
+          {
+            "criterion_id": "args",
+            "satisfied": true,
+            "reason": "expression 为 6*7。"
+          },
+          {
+            "criterion_id": "tool",
+            "satisfied": true,
+            "reason": "tool_name 为 calculator。"
+          }
+        ]
+      }
+    },
+    "m3": {
+      "context": {
+        "task_goal": "计算 6×7，由规划者给出方案，执行者使用计算器并在最终答案中引用计算器结果。",
+        "step": 3,
+        "message_id": "m3",
+        "agent": "solver",
+        "role": "执行者：调用计算器并给出有依据的答案",
+        "action_type": "utterance",
+        "history": [
+          {
+            "message_id": "u1",
+            "agent": "user",
+            "role": "user",
+            "action_type": "context",
+            "content": "计算 6×7，由规划者给出方案，执行者使用计算器并在最终答案中引用计算器结果。"
+          },
+          {
+            "message_id": "m1",
+            "agent": "planner",
+            "role": "规划者：制定计算方案",
+            "action_type": "utterance",
+            "content": "请用计算器计算 6×7，再引用计算结果作答。"
+          },
+          {
+            "message_id": "m2",
+            "agent": "solver",
+            "role": "执行者：调用计算器并给出有依据的答案",
+            "action_type": "tool_call",
+            "content": "{\"content\": \"计算所需乘积。\", \"tool_arguments\": {\"expression\": \"6*7\"}, \"tool_name\": \"calculator\"}",
+            "tool_call_id": "call1",
+            "initiating_agent": "solver"
+          },
+          {
+            "message_id": "obs1",
+            "agent": "calculator",
+            "role": "tool",
+            "action_type": "tool_result",
+            "content": "42",
+            "tool_call_id": "call1",
+            "initiating_agent": "solver"
+          }
+        ]
+      },
+      "output": "答案为42。",
+      "rubric_response": {
+        "rubrics": [
+          {
+            "id": "answer",
+            "description": "给出结果 42，与此前计算器返回一致。",
+            "weight": 0.7,
+            "rationale": "执行者需要完成求值子任务。"
+          },
+          {
+            "id": "evidence",
+            "description": "明确指出答案依据是计算器返回的结果。",
+            "weight": 0.3,
+            "rationale": "任务要求引用计算器结果，不能只报数字。"
+          }
+        ]
+      },
+      "judge_response": {
+        "judgements": [
+          {
+            "criterion_id": "evidence",
+            "satisfied": false,
+            "reason": "仅给出数字答案，没有说明依据来源。"
+          },
+          {
+            "criterion_id": "answer",
+            "satisfied": true,
+            "reason": "答案中的42与 obs1 的42一致。"
+          }
+        ]
+      }
+    }
+  }
+}
