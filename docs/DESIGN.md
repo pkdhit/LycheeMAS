@@ -96,6 +96,14 @@ sg.add_node(name, node_fn, metadata={"agent_spec": spec})   # spec: core.types.A
 
 ### 4.5 postrun（归因训练，`plugins/postrun/` × `methods/postrun/`）
 
+RaR 步骤奖励适配：`attributor/rubric_step_reward` + `credit_assigner/step_reward`。
+仅评分 agent 发言/工具调用，工具返回关联原调用但不另计步；工作角色与可见历史必须显式提供。
+生成器不读取本步输出，评审器按 criterion_id 对齐严格布尔判断后计算正权重归一化奖励。
+`aggregation` 经方法私有 Attribution.meta 传递，无需修改 plugins。
+这是局部细则满足度，不是因果信用归因；不实现 GRPO。
+离线回放入口 `scripts/run_rar_step_reward.py` 导出结果/盲标模板与可复现信息；
+回放不等价于真实模型实验。详细契约见 `src/lychee_mas/methods/postrun/README.md`。
+
 回答「一条轨迹里谁该为成败负责、如何用信号改进系统」。三入口：
 
 - **读侧** `analyze_run(trajectory, score, method, ...)`：attributor（`rubric_step_reward` 可跑；`all_at_once/step_by_step/binary_search` 桩）→ credit_assigner（`step_reward` 可跑；`attribution_guided` 桩）→ 写回 `trajectory.meta` 与 `TraceStore`。`rubric_step_reward` 将每条智能体发言/工具调用视为一步，自动生成或加载该步 rubrics，由评审模型逐条判定满足/不满足并按权重归一化为步骤奖励。
