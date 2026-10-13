@@ -165,3 +165,19 @@ $env:PYTHONDONTWRITEBYTECODE = "1"
 参考 [Rubrics as Rewards](https://arxiv.org/abs/2507.17746)。按项目接口独立编写的 MAS 适配，
 未引入原作者代码或提示词，不声称复现论文数值。响应级奖励改为动作级，正权重/正向细则，
 不做 GRPO。范围与验收见 docs/plans/rar-reproduction-plan.md。
+
+## 真实 API 接通检查的诊断
+
+`scripts/smoke_rar_api.py` 使用 RAR_API_MODEL、RAR_API_BASE_URL、RAR_API_KEY 环境变量，
+评分完整的人工构造样例轨迹。真实模型评分不代表该轨迹由真实MAS运行生成。
+运行 `python scripts/smoke_rar_api.py --max-output-tokens 4096` 会产生付费API调用。
+预算默认4096，服务商允许时可调整；脚本不自动扩大预算或重试格式错误。
+每次运行在 runs/rar/api-* 创建新目录，调用前保存 request，返回后保存 response.txt 和 metadata.json。
+metadata包含finish_reason、token与延迟；不保存密钥。全部成功后results子目录保存评分表和盲标模板。
+
+Unterminated string 表示JSON字符串未闭合，不能仅凭该错误断言是长度限制。
+finish_reason=length 表示达到输出长度上限，程序拒绝评分；stop但JSON无效则检查原始回复格式。
+服务商未提供结束原因时记录null，不推断成功或截断。排查时不要提交runs里的诊断产物。
+API后端新增的APIGenResult.finish_reason为默认None的可选字段，原有调用参数保持不变。
+
+AFTraj math 原始轨迹适配与运行说明见 [rar-aftraj](../../../../docs/experiments/rar-aftraj.md)。需显式选择共享历史假设；数据标签与评分输入分离。
