@@ -1,0 +1,6 @@
+{
+  "agent_roles": {
+    "MathSolver": "Solve the user's mathematics task, using available computation tools and explaining the solution.",
+    "Verifier": "Independently check the proposed solution against the user's task and mathematical evidence; report discrepancies and the verified answer."
+  }
+}

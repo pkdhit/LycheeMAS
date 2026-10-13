@@ -24,6 +24,7 @@ class APIGenResult:
     n_gen_tokens: int
     latency_s: float
     prefix_len: int = 0
+    finish_reason: Optional[str] = None
 
 
 class OpenAICompatibleBackend:
@@ -77,7 +78,10 @@ class OpenAICompatibleBackend:
         usage = getattr(response, "usage", None)
         prompt_tokens = int(getattr(usage, "prompt_tokens", 0) or 0)
         completion_tokens = int(getattr(usage, "completion_tokens", 0) or 0)
-        return APIGenResult(text or "", prompt_tokens, completion_tokens, latency)
+        return APIGenResult(
+            text or "", prompt_tokens, completion_tokens, latency,
+            finish_reason=getattr(choice, "finish_reason", None),
+        )
 
     def generate_chat_with_prefix(self, messages: List[Dict], prefix, max_new_tokens: int = 256):
         raise NotImplementedError(

@@ -5,7 +5,7 @@
 > 仓库：D:/LycheeMAS-collab；分支：postrun_stepreward。
 > 原始基线：9189cc2（本次 RaR 开发开始前的 LycheeMASv0.3 主线）。
 > 协作者版本：8e796d0，作者 pkdhit，提交说明“新增 step reward 的 rubric 评分实现”。
-> 我的版本：在 8e796d0 上继续修改的当前工作区，由本人提出需求并借助 Codex 完成；编写本文时尚未 commit/push。
+> 我的版本：在 8e796d0 上继续修改的当前工作区，由本人提出需求并借助 Codex 完成；初轮成果已提交为15963d1；后续API接入与AFTraj适配尚未提交，见第二部分第10节起。
 >
 > 基线核验：与 D:/LycheeMAS-LycheeMASv0.3 原项目目录比对的188个文件，在统一换行符后内容一致。
 > 本文统计 collab 仓库中该功能分支的累计改动；旧项目目录中的独立草稿不属于本分支改动。
@@ -84,7 +84,7 @@ Git 记录为新增778行、删除10行；行数仅表示变更量，不代表�
 本部分对应 `8e796d0 → 当前工作区`，是在协作者初版上的修复和补齐，不是从零重新实现全部功能。
 
 目标是完成用户要求的“自动生成细则 → MAS步骤评审 → 加权奖励 → 结果表 → 人工核查工具”，
-保持原项目接口、注册机制和模块分层。由于没有真实模型端点，本轮仅进行离线验证。
+保持原项目接口、注册机制和模块分层。初轮因没有真实模型端点，仅进行离线验证；后续接入与验证边界见第10节起。
 不做 GRPO，不把预设回放当成真实模型成果，不编造人工标注结果。
 
 ### 2. 我修改的已有文件
@@ -113,7 +113,7 @@ Git 记录为新增778行、删除10行；行数仅表示变更量，不代表�
 | docs/experiments/rar-step-reward.md | 已执行验证、运行命令、实际 origin/upstream 仓库及PR步骤 |
 | docs/rar-changes-from-original.md | 本文：两轮贡献与相对原始基线的合并改动说明 |
 
-本部分共修改6个已有文件、新增10个文件（含本文）。没有新增专项测试文件。
+第2—9节为初轮历史记录：修改6个已有文件、新增10个文件（含本文），不含后续增量。没有新增专项测试文件。
 两个 scripts 文件是正式运行/分析入口，不是专项测试脚本。
 
 ### 4. 核心修复前后对比
@@ -180,7 +180,7 @@ CSV展示转义保留可追溯的ID对应关系，JSON保存原始内容。
 
 ### 7. 原项目接口与功能保持情况
 
-本次两轮改动没有修改以下基础接口/实现：
+截至初轮离线实现，以下基础接口/实现未修改；后续模型后端变化见第10节：
 
 - plugins/postrun/base.py 中 analyze_run、optimize_postrun、train_from_runs。
 - core/types.py 中 Message、Trajectory 等公共类型。
@@ -214,7 +214,7 @@ CSV展示转义保留可追溯的ID对应关系，JSON保存原始内容。
 
 ### 9. 两部分合并后的总览与建议审查顺序
 
-相对9189cc2，合并两轮改动并包含本文后，共涉及17个不同文件：新增13个、修改4个。
+截至初轮离线实现，相对9189cc2共涉及17个不同文件：新增13个、修改4个。
 两轮都修改过的文件只计一次，不能把两个部分的文件数直接相加。
 
 原始已有文件的4处修改是：
@@ -235,4 +235,265 @@ CSV展示转义保留可追溯的ID对应关系，JSON保存原始内容。
 4. 负责实验的人运行离线入口，检查结果表和人工盲标模板。
 5. 按docs/experiments/rar-step-reward.md提交到自己的fork，再向协作者postrun_stepreward分支创建PR。
 
-本文创建时未自动commit、push或创建PR；原提交8e796d0保留，不改写协作者历史。
+本文初次创建时未自动commit、push或创建PR，之后用户已提交15963d1；原提交8e796d0保留，不改写协作者历史。
+
+### 10. 后续更新：真实API接入与AFTraj轨迹适配（2026-10-13）
+
+本节继续归入“我修改的部分”，不改变协作者初版的贡献归属。
+对比起点为15963d1，覆盖此前API排错和本次AFTraj适配；此前API工作不重复算作本次新写。
+第2—9节的文件数量和“没有真实LLM测试”等描述是初轮历史状态。
+用户此前已报告人工样例上真实模型调用成功；本次AFTraj适配仅做离线验证，未发起付费请求。
+
+#### 10.1 完整文件清单
+
+| 文件 | 相对15963d1 | 内容 |
+|---|---|---|
+| src/lychee_mas/backends/openai_api_backend.py | 修改 | 前序API排错增加APIGenResult.finish_reason，默认None；generate_chat透传服务商结束原因 |
+| scripts/smoke_rar_api.py | 新增 | 前序增加API运行与逐调用诊断；本次增加--input及输入哈希、来源和假设记录 |
+| src/lychee_mas/methods/postrun/rar_aftraj_adapter.py | 新增 | convert_aftraj()将原始math记录转换成规范轨迹和独立源标注 |
+| scripts/prepare_rar_aftraj.py | 新增 | 本地Parquet读取、选样、校验、转换与来源清单输出 |
+| configs/postrun/rar_aftraj.json | 新增 | MathSolver与Verifier的实验职责配置 |
+| docs/experiments/rar-aftraj.md | 新增 | 数据引用、假设、运行命令、已知问题与边界 |
+| src/lychee_mas/methods/postrun/README.md | 修改 | 累计增加API说明、诊断方法及AFTraj文档入口 |
+| docs/rar-changes-from-original.md | 修改 | 本文续写贡献、验证记录和PR步骤 |
+
+本轮交付8个文件，新增5个、修改3个（含本文）。相对最原始9189cc2累计23个不同文件，
+新增18个、修改5个；两轮都涉及的文件不重复计数。
+评分公式、注册名、plugins接口、core公共类型和其他论文算法没有修改。
+适配器是方法私有工具，不需要新注册算法。pyarrow在准备脚本main()内惰性导入。
+本轮没有改依赖声明，没有新增持久化专项测试文件。
+
+#### 10.2 API运行和诊断
+
+- 通过现有OpenAICompatibleBackend调用模型，methods层仍通过回调注入模型。
+- 使用RAR_API_MODEL、RAR_API_BASE_URL、RAR_API_KEY，不把密钥写入代码或运行配置。
+- 每步rubric→judge，max_rubrics=4、aggregation=mean、history_mode=explicit。
+- --input指定单条规范化轨迹；不传时继续使用examples/data/rar_trajectory.json。
+- --max-output-tokens默认4096且必须为正；--output指定新目录，拒绝覆盖。
+- 每次调用保存.request.json、.response.txt、.metadata.json，记录结束原因、token和延迟。
+- finish_reason=length明确报截断；其他非stop/None原因也报错；None只是未提供结束原因，仍须校验JSON。
+- 非法JSON不自动补全、不伪造评分、不自动重试。失败时保留诊断，完整成功后导出结果表。
+- config.json保存模型、Git SHA/dirty、输入路径/SHA256、配置、数据来源与假设。
+  完成后的结果元数据还记录调用数、token和延迟汇总。
+- 入口读取trajectory.json，不直接读取Parquet或source_annotations.json。
+
+#### 10.3 转换函数、步骤与映射
+
+convert_aftraj(record, *, agent_roles, history_policy)返回两个字典：
+规范化轨迹（供load_trajectory加载）和独立源标注。内部使用prepare_steps进行契约校验。
+
+| 原始数据 | 处理 |
+|---|---|
+| task | 写入task_goal，不用gold_answer构造目标 |
+| user/system | 上下文，不评分 |
+| agent content | 一条公开发言步骤 |
+| agent action列表 | 每个调用独立计步；解析嵌套JSON参数，要求参数是对象 |
+| 同轮content和action | 分开发言/调用；均只见此前原始轮次 |
+| environment结果列表 | 逐个转tool消息，关联此前唯一调用并校验工具名，不计步 |
+| thought | 不进入评分，只统计省略数量 |
+| 无公开发言/调用轮次 | 不生成空步骤，omitted_turns记录原轮次及原因 |
+| 重复调用、孤立/重复返回、未知角色、非法参数 | 明确报错 |
+| 尚无返回的调用 | 记录unmatched_call_ids，不伪造结果 |
+| 未知时间戳 | ts=0并明确注明，不伪造真实耗时 |
+
+轨迹/消息ID使用conv_id哈希和序号，task_id使用任务文本哈希；调用ID换成中性顺序ID。
+旁路mapping保存message_id、source_turn_index、source_item_index、original_call_id、step。
+原轮次从0编号、评分步骤从1编号，不能混用。
+源mistake_step按零基解释只是待核实假设；一轮拆多步时输出candidate_mistake_steps，
+不擅自认定哪个调用是真正错误，也不将源标签当逐细则人工标注。
+
+#### 10.4 历史、角色与标签隔离
+
+必须显式选择shared-prefix：每步看到此前原始轮次，同轮兄弟步骤互不可见，
+未来工具结果不进入当前细则生成上下文。数据未提供真实可见性，这是实验假设。
+MathSolver/Verifier职责来自配置，不是恢复的原始system prompt。
+这些假设保存在轨迹元数据和运行记录中。
+
+gold_answer、原conv_id、safe/unsafe、mistake_*、unsafe_source只保存在旁路标注或清单，
+不附加到模型提示；轨迹内容中原本出现的答案/错误仍原样保留。
+标签隔离不等于模型无法根据实际行为判断错误。
+
+#### 10.5 准备入口与输出
+
+在D:/LycheeMAS-collab执行（输出目录必须不存在）：
+
+```powershell
+.\.venv\Scripts\python.exe scripts/prepare_rar_aftraj.py --history-policy shared-prefix --output runs/rar/aftraj-new
+```
+
+| 参数 | 含义 |
+|---|---|
+| --source-dir | 默认data/benchmarks/prepared/aftraj，读取所选分组的aftraj_safe.parquet/aftraj_unsafe.parquet |
+| --roles | 默认configs/postrun/rar_aftraj.json |
+| --history-policy | 必填，目前仅shared-prefix |
+| --split | 默认both，可选safe/unsafe |
+| --limit | 默认2，正数 |
+| --conv-id | 可重复指定，优先于limit；缺失/重复记录报错 |
+| --output | 必填的新目录 |
+
+脚本只读本地数据，不下载、不调用模型。需要环境已安装pyarrow。
+默认按源顺序交替选择safe/unsafe，不是随机抽样，不保证一般情况下配对。
+没有自动应用splits_test.json；正式使用官方划分时应先确认记录并显式选择。
+所选记录全部校验成功才开始创建输出；坏记录会导致失败，不自动跳过。
+
+每条输出为aftraj-<摘要>/trajectory.json及source_annotations.json；根目录manifest.json
+记录源文件路径/哈希、角色配置、选择策略、历史假设、Git状态、引用许可、步数和预计调用数。
+
+已准备的样例在runs/rar/aftraj-adapted：
+
+| 原记录 | 子目录 | 步数/预计API调用 |
+|---|---|---|
+| math_0000_safe | aftraj-d1b4a62a8e09a971b470 | 11/22 |
+| math_0000_unsafe_injected_static | aftraj-6856aeaddefe019d688b | 9/18 |
+
+设置原有API环境变量后可运行：
+
+```powershell
+.\.venv\Scripts\python.exe scripts/smoke_rar_api.py --input runs/rar/aftraj-adapted/aftraj-d1b4a62a8e09a971b470/trajectory.json
+```
+
+此命令实际调用模型；每次处理一条轨迹，不是批量调度器。
+长历史仍受原评分器预算约束，超限明确报错，不静默截断。
+输出沿用results.json、criteria.csv、model_calls.json、human_annotations.csv及原人工核查入口。
+
+### 11. 本次验证与尚未完成的实验
+
+| 检查 | 适配实施时的结果 |
+|---|---|
+| 全量math转换校验 | safe395/396、unsafe397/397，共792/793 |
+| 唯一失败 | math_0153_safe参数重复expression键，严格拒绝，不选择其一覆盖 |
+| 两条样例评分导出 | 11/9步通过；40次合成回调，不是40次真实API请求 |
+| 历史/标签检查 | 样例不见同轮及未来消息，不附加标准答案字段/错误原因/原unsafe标识 |
+| 稳定性/异常 | 确定性ID通过；孤立返回、重复调用、非法参数、未知角色、未声明历史策略均拒绝 |
+| 现有pytest | 184 passed、3 skipped |
+| ruff | src及API/准备入口通过 |
+| 零重依赖 | HEAVY LOADED: NONE，含pyarrow检查 |
+| 差异格式 | git diff --check通过 |
+
+本次续写文档未重新运行真实模型。临时断言未保存为专项测试脚本。
+全量转换检查成功不等于逐条数学内容正确，也不是793个独立持久化测试。
+直接选择全部793条会遇到坏记录而失败，脚本不会自动产出过滤后的792条。
+合成回调满分仅验证流程与计算，不能当模型效果或人工标注结果。
+
+目前仅支持AFTraj math事后评分，不是MATH-50重新运行MAS，不做GRPO。
+真实AFTraj评分质量、少量人工盲标及一致性分析仍待完成；建议先跑一对，再扩展样本。
+unsafe含人工注入错误，不能全部称为自然失败。
+
+数据：https://huggingface.co/datasets/ZBox008003/AFTraj （CC BY 4.0）。
+配套项目：https://github.com/ZBox1005/AgentForesight 。
+论文：https://arxiv.org/abs/2605.08715 。报告中保留引用与许可，并说明角色和可见性假设。
+
+### 12. 提交与PR操作（本次仅提供方法，未代执行）
+
+已核对：当前分支postrun_stepreward；origin是R1kka794/LycheeMAS，
+upstream是pkdhit/LycheeMAS。本地有upstream/postrun_stepreward跟踪记录，最新远程状态需fetch核实。
+
+#### 12.1 查看并按文件暂存
+
+```powershell
+Set-Location D:\LycheeMAS-collab
+git branch --show-current
+git status
+git diff --stat
+```
+
+应在postrun_stepreward；若不一致，先检查工作区，不盲目带改动切分支。
+git diff不包含未跟踪文件，需结合status查看。
+
+```powershell
+git add src/lychee_mas/backends/openai_api_backend.py src/lychee_mas/methods/postrun/README.md
+git add src/lychee_mas/methods/postrun/rar_aftraj_adapter.py
+git add scripts/smoke_rar_api.py scripts/prepare_rar_aftraj.py
+git add configs/postrun/rar_aftraj.json docs/experiments/rar-aftraj.md docs/rar-changes-from-original.md
+git diff --cached --stat
+git diff --cached --check
+git diff --cached
+```
+
+本轮预期8个文件；之前已暂存其他内容时须逐项核对。不要直接git add .混入未知文件。
+不要提交密钥、.env、.venv、Parquet、runs产物或用途未确认的tream。
+本次交付同时含此前API入口和本次适配，避免只提交适配器漏掉入口。
+
+#### 12.2 Commit并推送自己的fork
+
+```powershell
+git commit -m "feat(postrun): 接入真实API并适配AFTraj步骤评分"
+git fetch origin
+git push origin postrun_stepreward
+git status
+git log -1 --oneline
+```
+
+推送成功且与origin分支同步表示自己的fork已更新，不表示已合入upstream。
+仅剩tream未跟踪不代表提交失败。
+如提示缺作者身份，用本人信息设置仓库级配置，再重试commit（不要照抄占位值）：
+
+```powershell
+git config user.name "你的GitHub用户名"
+git config user.email "你的已验证邮箱或GitHub提供的noreply邮箱"
+```
+
+如push因远程新提交被拒绝，先fetch并检查再合并，不force push：
+
+```powershell
+git fetch origin
+git log --oneline --left-right HEAD...origin/postrun_stepreward
+git merge origin/postrun_stepreward
+```
+
+冲突需逐处解决、暂存并完成merge commit；运行相关检查后再push。
+
+#### 12.3 在GitHub创建或更新PR
+
+1. 打开https://github.com/pkdhit/LycheeMAS ，进入Pull requests → New pull request。
+2. 点击compare across forks。
+3. base repository选pkdhit/LycheeMAS，base选postrun_stepreward。
+4. head repository选R1kka794/LycheeMAS，compare选postrun_stepreward。
+5. 检查Files changed，确认没有数据、密钥和运行产物。
+6. 填写下面标题/正文，Create pull request，请协作者review。
+
+直接比较链接：
+https://github.com/pkdhit/LycheeMAS/compare/postrun_stepreward...R1kka794:postrun_stepreward?expand=1
+
+这里延续合入协作者功能分支的方案；双方确认回主线时才把base改成LycheeMASv0.3。
+如果相同head/base已有开放PR，本次push会自动更新它，修改现有PR说明即可。
+若upstream还没有合入15963d1，PR会包含此前离线改动，整个PR不一定只有本轮8个文件。
+
+#### 12.4 可复制的PR标题和正文
+
+标题：
+
+```text
+feat(postrun): 接入真实API并支持AFTraj数学轨迹步骤评分
+```
+
+正文（第一段仅在PR包含15963d1时保留）：
+
+```markdown
+## 改动
+
+包含此前RaR严格输入校验、离线回放、结果导出与人工核查入口。
+
+增加真实API调用及诊断入口；将AFTraj math原始记录适配为现有步骤评分输入。
+批量工具调用拆成独立步骤，工具结果关联但不计步，源标签与标准答案分开保存。
+API入口新增--input，记录原始回复、结束原因、输入哈希及实验假设。
+
+公共plugins/core接口和评分注册名保持不变，后端增加可选finish_reason返回字段。
+完整贡献分工见docs/rar-changes-from-original.md。
+
+## 验证
+
+- 现有测试184通过、3跳过；ruff与零重依赖检查通过。
+- 793条math记录中792条转换通过，一条重复JSON键记录明确拒绝。
+- 两条样例11/9步，离线合成回调评分和导出通过。
+- 检查稳定ID、历史隔离与多类非法输入拒绝行为。
+
+## 限制
+
+共享历史与角色职责为显式实验假设；mistake_step零基解释待核实。
+本次AFTraj适配未调用真实模型，尚未做真实人工标注，不做GRPO。
+数据、密钥及运行产物不随PR提交。
+```
+
+review后继续在同一分支修改、commit、push，PR会自动更新。
+PR正文应描述当前实际未合入的差异，本文则保留完整累计贡献。
