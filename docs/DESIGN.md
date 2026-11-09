@@ -103,6 +103,9 @@ RaR 步骤奖励适配：`attributor/rubric_step_reward` + `credit_assigner/step
 这是局部细则满足度，不是因果信用归因；不实现 GRPO。
 离线回放入口 `scripts/run_rar_step_reward.py` 导出结果/盲标模板与可复现信息；
 回放不等价于真实模型实验。详细契约见 `src/lychee_mas/methods/postrun/README.md`。
+真实 API 实验由 `scripts/run_rar_pipeline.py` 编排：复用 static 队伍与提示词生成轨迹，
+注入现有 OpenAI 后端回调执行步骤评分，并导出独立 LLM 盲标输入。
+`scripts/review_rar_labels.py` 负责模型复标和一致性比较，不修改公共接缝或评分算法。
 
 回答「一条轨迹里谁该为成败负责、如何用信号改进系统」。三入口：
 

@@ -113,6 +113,14 @@ make lint     # ruff check src
 
 全部离线（LLM 脚本化），无需 API key。
 
+## RaR 步骤奖励 API 实验
+
+`scripts/run_rar_pipeline.py` 复用已有静态队伍和提示词，通过 OpenAI 兼容 API 生成
+真实 MAS 轨迹，再调用本分支的步骤细则生成、逐项评审与奖励导出。
+支持批量运行、断点续跑，以及不含初评标签的独立 LLM 盲标包。
+安装使用轻量 `.[api,langgraph,config]` extras；地址与密钥只从环境变量读取。
+完整命令和复核流程见 [`src/lychee_mas/methods/postrun/README.md`](src/lychee_mas/methods/postrun/README.md)。
+
 ---
 
 ## 支持的 Benchmarks

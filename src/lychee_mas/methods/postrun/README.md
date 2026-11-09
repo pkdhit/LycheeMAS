@@ -112,7 +112,6 @@ rows = trajectory.meta["rubric_step_reward"]["criteria_rows"]
 
 默认两个回调都必须注入。同步回调返回 str；无运行中事件循环时可自动等待异步回调。
 异步应用使用 `await asyncio.to_thread(analyze_run, ...)`，避免嵌套事件循环。
-真实模型以后由脚本通过 backends 包装为回调，本次不配置/测试真实调用。
 固定细则消融须显式传 default_rubrics，不能同时传 rubric_llm；报告标记 fixed_baseline。
 删除了默认固定细则和启发式 judge 兜底；旧 heuristic_judge/min_content_chars/
 use_external_reward 参数会显式报错。
@@ -158,15 +157,15 @@ $env:PYTHONDONTWRITEBYTECODE = "1"
 ```
 
 空标注报错；部分标注报告覆盖率；仅完整标注步骤计奖励 MAE；重复/未知 ID 报错。
-一致率是对独立人工判断的一致程度，不是答案准确率。本次交付工具，不伪造人工标注。
+一致率是对独立人工判断的一致程度，不是答案准确率。
 
 ## 论文与差异
 
 参考 [Rubrics as Rewards](https://arxiv.org/abs/2507.17746)。按项目接口独立编写的 MAS 适配，
 未引入原作者代码或提示词，不声称复现论文数值。响应级奖励改为动作级，正权重/正向细则，
-不做 GRPO。范围与验收见 docs/plans/rar-reproduction-plan.md。
+不做 GRPO。
 
-## 真实 API 接通检查的诊断
+## 真实 API 接通检查与 AFTraj 适配
 
 `scripts/smoke_rar_api.py` 使用 RAR_API_MODEL、RAR_API_BASE_URL、RAR_API_KEY 环境变量，
 评分完整的人工构造样例轨迹。真实模型评分不代表该轨迹由真实MAS运行生成。
@@ -180,4 +179,19 @@ finish_reason=length 表示达到输出长度上限，程序拒绝评分；stop�
 服务商未提供结束原因时记录null，不推断成功或截断。排查时不要提交runs里的诊断产物。
 API后端新增的APIGenResult.finish_reason为默认None的可选字段，原有调用参数保持不变。
 
-AFTraj math 原始轨迹适配与运行说明见 [rar-aftraj](../../../../docs/experiments/rar-aftraj.md)。需显式选择共享历史假设；数据标签与评分输入分离。
+AFTraj math 原始轨迹可通过 `python scripts/prepare_rar_aftraj.py --history-policy shared-prefix --output runs/rar/aftraj-new` 转换为规范轨迹；需显式选择共享历史假设，数据标签与评分输入分离。
+
+## API 生成轨迹与独立 LLM 复核
+
+新增 `scripts/run_rar_pipeline.py` 复用原 static/reason 队伍与原提示，生成真实轨迹并
+调用本模块评分；`scripts/review_rar_labels.py` 提供强模型盲标和模型间一致性比较。
+不填写旧 `human_annotations.csv`，新标签明确标记 `label_source=llm`。
+
+```bash
+python scripts/run_rar_pipeline.py --output runs/rar/my-batch
+python scripts/review_rar_labels.py compare \
+  --requests runs/rar/my-batch/review_blind/requests.json \
+  --labels runs/rar/my-independent-review/labels.json \
+  --baseline runs/rar/my-batch/steps.json \
+  --output runs/rar/my-independent-review/comparison.json
+```

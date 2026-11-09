@@ -14,6 +14,8 @@ authors = [{ name = "LycheeMAS" }]
 dependencies = []
 
 [project.optional-dependencies]
+# OpenAI 兼容 API 轨迹生成/评分，不安装 GPU 运行时。
+api = ["openai>=1,<4"]
 # 运行时后端 + latent 注入（autogen / torch / transformers）。仅 runtime/backends/autogen_*.py 与
 # hf_backend / 真实推理才需要；离线 mock 不需要。
 runtime = [

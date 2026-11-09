@@ -1,0 +1,11 @@
+{
+  "benchmark": "math500",
+  "team": "reason",
+  "n": 10,
+  "seed": 42,
+  "max_output_tokens": 4096,
+  "agent_temperature": 0.7,
+  "scoring_temperature": 0.0,
+  "max_rubrics": 6,
+  "workers": 2
+}
